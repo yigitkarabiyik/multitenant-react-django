@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+
+  main:
+    build:
+      context: ./main/frontend/
+      dockerfile: Dockerfile
+    expose:
+      - "3000"
+    command: serve -s build -l 3000
+    networks:
+      - mynetwork
+  
+  ecom_backend:
+    build: 
+      context: ./project1/backend # Django projesinin bulunduğu klasör yolu
+      dockerfile: Dockerfile
+    command: gunicorn config.wsgi:application --bind 0.0.0.0:8001
+    expose:
+      - "8001"
+    networks:
+      - mynetwork
+
+  ecom_frontend:
+    build: 
+     context: ./project1/frontend # React projesinin bulunduğu klasör yolu
+     dockerfile: Dockerfile
+    command: serve -s build -l 3001
+    expose:
+      - "3001"
+    networks:
+      - mynetwork
+  
+  nginx:
+    image: nginx:latest
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./ssl_certs:/etc/ssl/certs
+    networks:
+      - mynetwork
+    depends_on:
+      - main
+      - ecom_backend
+      - ecom_frontend
+
+networks:
+  mynetwork:
